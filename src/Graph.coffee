@@ -24,8 +24,8 @@ class grasky.Graph
     @_scene = new THREE.Scene
     @_camera = new THREE.PerspectiveCamera(
         45, canvas.clientWidth / canvas.clientHeight, 1.1, 10000)
-    renderer = new THREE.WebGLRenderer canvas: canvas
-    renderer.setSize canvas.clientWidth, canvas.clientHeight
+    @_renderer = new THREE.WebGLRenderer canvas: canvas
+    @_renderer.setSize canvas.clientWidth, canvas.clientHeight
     @_camera.position.z = CAMERA_DISTANCE
     @_initializeLights()
     @_initializeSkybox()
@@ -37,7 +37,7 @@ class grasky.Graph
       @_updateDraggedNodePositions()
       for edge in @_edges
         edge.updatePosition @_camera
-      renderer.render @_scene, @_camera
+      @_renderer.render @_scene, @_camera
       requestAnimationFrame renderLoop
     renderLoop()
 
@@ -312,6 +312,14 @@ class grasky.Graph
     right = (if dPressed then 1 else 0) - (if aPressed then 1 else 0)
     @_camera.translateZ -FLY_SPEED * forward
     @_camera.translateX FLY_SPEED * right
+
+  fixViewBounds: ->
+    width = @_canvas.clientWidth
+    height = @_canvas.clientHeight
+    @_camera.aspect = width / height
+    @_camera.updateProjectionMatrix()
+    @_renderer.setSize width, height
+
 
   class DraggedNode
     constructor: (@node, @offset, @distance) ->
