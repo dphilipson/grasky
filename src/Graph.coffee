@@ -12,7 +12,7 @@ class grasky.Graph
 
   constructor: (canvas) ->
     @_canvas = canvas
-    @_nodes = []
+    @_nodes = new grasky.LinkedDict
     @_edges = []
     @_selectionListeners = []
     @_draggedNodes = {}
@@ -42,7 +42,7 @@ class grasky.Graph
     renderLoop()
 
     updateLoop = =>
-      for node in @_nodes
+      for node in @_nodes.values()
         node.updateFlight LOOP_PERIOD_MILLIS / NODE_FLIGHT_TIME_MILLIS
       @_updateCameraMovement()
       setTimeout updateLoop, LOOP_PERIOD_MILLIS
@@ -74,27 +74,28 @@ class grasky.Graph
     @_scene.add skybox
 
   addNode: (id, text) ->
-    unless @getNode id
-      @_nodes.push new grasky.Node id, text, @_scene
+    unless @_nodes.containsKey id
+      @_nodes.put id, new grasky.Node(id, text, @_scene)
     else
       console.error "Tried to add an existing node with id #{id}"
 
   removeNode: (id) ->
-    node = @getNode id
+    node = @_nodes.get id
     if node
       @_scene.remove node.mesh
-      @_nodes = (n for n in @_nodes when n isnt node)
+      node.dispose
+      @_nodes.remove id
       for edge in _.filter @_edges, ((e) -> node in e.nodes)
         @_removeEdge edge
+      if node.isSelected
+        @_notifySelectionListeners
     else
       console.warn "Tried to remove nonexistant node with id #{id}"
 
-  getNode: (id) -> _.find @_nodes, (node) -> node.id is id
-
   addEdge: (id1, id2, text, id) ->
     unless @getEdge id1, id2
-      node1 = @getNode id1
-      node2 = @getNode id2
+      node1 = @_nodes.get id1
+      node2 = @_nodes.get id2
       @_edges.push new grasky.Edge node1, node2, text, @_scene, id
     else
       console.error "Tried to add an existing edge with ids #{id1}, #{id2}"
@@ -109,6 +110,7 @@ class grasky.Graph
   _removeEdge: (edge) ->
     @_scene.remove edge.mesh
     @_scene.remove edge.label
+    edge.dispose
     @_edges = (e for e in @_edges when e isnt edge)
 
   getEdge: (id1, id2) ->
@@ -123,21 +125,19 @@ class grasky.Graph
     @_selectionListeners = _.reject @_selectionListeners, (c) -> c is callback
 
   setSelection: (id, selected) ->
-    node = @getNode id
+    node = @_nodes.get id
     if node
       @_setSelectionInternal node, selected
     else
       console.warn "Tried to set selection of nonexistant node with id #{id}"
 
   _setAsOnlySelectedNode: (node) ->
-    for n in @_nodes
-      n.setSelected false
+    @_nodes.foreach (n) -> n.setSelected false
     node.setSelected true
     @_notifySelectionListeners()
 
   _clearSelection: ->
-    for n in @_nodes
-      n.setSelected false
+    @_nodes.foreach (n) -> n.setSelected false
     @_notifySelectionListeners()
 
   _toggleSelection: (node) ->
@@ -153,11 +153,11 @@ class grasky.Graph
       listener selectedIds
     return
 
-  _getSelectedNodes: -> n for n in @_nodes when n.selected
+  _getSelectedNodes: -> n for n in @_nodes.values() when n.selected
 
   applyLayout: (layout) ->
     selectedNodes = @_getSelectedNodes()
-    nodes = if selectedNodes.length > 0 then selectedNodes else @_nodes
+    nodes = if selectedNodes.length > 0 then selectedNodes else @_nodes.values()
     if nodes.length is 0
       return
     center = if selectedNodes.length is 0
@@ -246,7 +246,7 @@ class grasky.Graph
   _getNodeAtCanvasPoint: (x, y) ->
     vector = @_getVectorFromCanvasPoint x, y
     raycaster = new THREE.Raycaster @_camera.position, vector
-    intersects = raycaster.intersectObjects (n.mesh for n in @_nodes)
+    intersects = raycaster.intersectObjects (n.mesh for n in @_nodes.values())
     if intersects.length > 0
       intersects[0].object.node
 
@@ -279,7 +279,7 @@ class grasky.Graph
 
   _fixLabelRotations: ->
     if @_needsOrientationUpdate
-      for node in @_nodes
+      @_nodes.foreach (node) =>
         label = node.label
         label.translateX label.width / 2
         label.rotation.set 0, @_camera.rotation.y, 0, 'YXZ'

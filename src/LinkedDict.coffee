@@ -1,7 +1,9 @@
 grasky = window.grasky ?= {}
 
 class grasky.LinkedDict
-  constructor: ->
+  constructor: -> @clear()
+
+  clear: ->
     @_dict = {}
     @_list = new LinkedList
     @_size = 0
@@ -30,7 +32,7 @@ class grasky.LinkedDict
     else
       undefined
 
-  containsKey: (key) -> @_dict.hasOwnProperty key
+  containsKey: (key) -> @_dict.hasOwnProperty mangle(key)
 
   size: -> @_size
 
@@ -40,12 +42,12 @@ class grasky.LinkedDict
 
   keys: ->
     keys = []
-    @_list.foreach (key, value) -> keys.push key
+    @_list.foreach (value, key) -> keys.push key
     keys
 
   values: ->
     values = []
-    @_list.foreach (key, value) -> values.push value
+    @_list.foreach (value) -> values.push value
     values
 
   # Prevent chaos if '__proto__' or 'hasOwnProperty' is given as a key.
@@ -62,7 +64,7 @@ class grasky.LinkedDict
     foreach: (f) ->
       curr = @_start.next
       while curr isnt @_end
-        f curr.key, curr.value
+        f curr.value, curr.key
         curr = curr.next
       return
 

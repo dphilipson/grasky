@@ -69,3 +69,13 @@ class grasky.Edge
       @nodes[0]
     else
       console.error('Unexpected node in edge')
+
+  dispose: ->
+    @mesh.geometry.dispose
+    @mesh.material.dispose
+    @mesh.dispose
+    @mesh = null
+    @label.geometry.dispose
+    @label.material.dispose
+    @label.dispose
+    @label = null

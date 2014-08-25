@@ -68,4 +68,9 @@ class grasky.Node
       @mesh.position.copy(@_flightStart).multiplyScalar(1 - t)
           .add @_flightEnd.clone().multiplyScalar(t)
 
+  dispose: ->
+    @mesh.geometry.dispose()
+    @mesh.material.dispose()
+    @mesh = null
+
   ease = (t) -> 3 * t * t - 2 * t * t * t
