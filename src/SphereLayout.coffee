@@ -8,16 +8,19 @@ class grasky.SphereLayout
   BOUNDRY_ATTRACTIVE_CONSTANT = 0.50
 
   getLayout: (nodeCount, edges) ->
-    particles = (new Particle for i in [0...nodeCount])
-    for iteration in [0...NUM_ITERATIONS]
-      for particle in particles
-        particle.position.add particle.velocity
-        particle.velocity.add @_dragForce particle
-        particle.velocity.add @_boundryAttractiveForce particle
-        for other in particles
-          if particle != other
-            particle.velocity.add @_repulsiveForce particle, other
-    (particle.position for particle in particles)
+    if nodeCount is 1
+      new THREE.Vector3
+    else
+      particles = (new Particle for i in [0...nodeCount])
+      for iteration in [0...NUM_ITERATIONS]
+        for particle in particles
+          particle.position.add particle.velocity
+          particle.velocity.add @_dragForce particle
+          particle.velocity.add @_boundryAttractiveForce particle
+          for other in particles
+            if particle != other
+              particle.velocity.add @_repulsiveForce particle, other
+      (particle.position for particle in particles)
 
   _dragForce: (particle) ->
     particle.velocity.clone().multiplyScalar -DRAG_CONSTANT
