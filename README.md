@@ -2,8 +2,11 @@ Grasky
 ======
 
 Grasky is a library for displaying three-dimensional graphs (the kind with
-nodes and edges) in the browser. The graphs are drawn onto a canvas element
-using WebGL and support the following operations:
+nodes and edges) in the browser. Try it yourself online at
+<http://dphilipson.github.io/grasky>.
+
+The graphs are drawn onto a canvas element using WebGL and support the
+following operations:
 
 * Adding or removing nodes or edges
 * Setting the text of nodes or edges
